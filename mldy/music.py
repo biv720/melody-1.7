@@ -1,25 +1,26 @@
-from DiscordUtils.Music import EmptyQueue
+#NOTE INSTALL PycordUtils 
+from PycordUtils.Music import EmptyQueue
 import discord
 from discord import embeds
 from discord.embeds import Embed
 from discord.ext import commands
 import aiohttp
 import asyncio
-import DiscordUtils
-from discord.ext.commands.core import command
-music= DiscordUtils.Music()
+import PycordUtils
+#music= PycordUtils.Music()
 
-class Song(commands.Cog):
+class music(commands.Cog):
 
 
     def __init__(self, bot):
         self.bot = bot
+        self.music = PycordUtils.Music()
     
     #join
-    @commands.command(aliases=["c","connect","j"])
+    @commands.slash_command(name="join",description="Joins VC")
     async def join(self,ctx):
       ec=discord.Embed(title=f"Connected :white_check_mark: ",colour = discord.Colour.green())
-      ec.set_footer(text = "Please check m-how to use")
+      #ec.set_footer(text = "Please check m-how to use",icon_url=self.bot.user.avatar.url)
       ece=discord.Embed(title=f":bangbang: Please join a VC first. ",colour = discord.Colour.light_grey())
       if ctx.author.voice is None:
         await ctx.send(embed=ece)
@@ -33,9 +34,17 @@ class Song(commands.Cog):
         c1=await ctx.send(embed=ec)
         await c1.add_reaction('🆗')
 
-    #leave
-    @commands.command(aliases=["dc","disconnect","l"])
+
+    @commands.slash_command(name="leave", description="Leaves VC")
     async def leave(self,ctx):
+      dccc=discord.Embed(title=f"{self.bot.user} Disconnected :white_check_mark: ",colour = discord.Colour.green())
+      await ctx.guild.voice_client.disconnect()
+      dc= await ctx.send (embed=dccc)
+      await dc.add_reaction('🆗')
+
+    #leave
+    @commands.slash_command(name="disconnect",description="Disconnect VC")
+    async def disconnect(self,ctx):
       ece=discord.Embed(title=f":bangbang: You aren't connected to a VC ",colour = discord.Colour.light_grey())
       ece1=discord.Embed(title=f":bangbang: I am not connected to a VC right now",colour = discord.Colour.light_grey())
       if ctx.author.voice is None:
@@ -45,48 +54,26 @@ class Song(commands.Cog):
         dc2=await ctx.send(embed=ece1)
         await dc2.add_reaction('❌')
       edc=discord.Embed(title=f"{self.bot.user} Disconnected :white_check_mark: ",colour = discord.Colour.green())
-      player = music.get_player(guild_id=ctx.guild.id)
+      #player = music.get_player(guild_id=ctx.guild.id)
      
       await asyncio.sleep(1)
       await ctx.guild.voice_client.disconnect()
       dc = await ctx.send(embed=edc)
       await dc.add_reaction('🆗')
+        
+    @commands.slash_command(name="play",description="Plays song in VC")
+    async def play(self,ctx, *, url):
+        player = music.get_player(guild_id=ctx.guild.id)
+        if not player:
+            player = music.create_player(ctx, ffmpeg_error_betterfix=True)
+        if not ctx.voice_client.is_playing():
+            await player.queue(url, search=True)
+            song = await player.play()
+            await ctx.send(f"Playing {song.name}")
+        else:
+            song = await player.queue(url, search=True)
+            await ctx.send(f"Queued {song.name}")
     
-
-    #play
-    @commands.command(aliases=["p"])
-    async def play(self,ctx, * ,url):
-      a=f"<a:l2:885181683043827782> Searching  For {url}, please be patient"
-      msg = await ctx.send(a)
-      player = music.get_player(guild_id=ctx.guild.id)
-      ece=discord.Embed(title=f":bangbang: You aren't connected to a VC ",colour = discord.Colour.light_grey())
-      ece1=discord.Embed(title=f":bangbang: I am not connected to a VC right now",colour = discord.Colour.light_grey())
-      if ctx.author.voice is None:
-        await ctx.send(embed=ece)
-      if ctx.guild.me.voice is None:
-        await ctx.send(embed=ece1)
-      if not player:
-        player = music.create_player(ctx,ffmpeg_error_betterfix=True)
-      if not ctx.voice_client.is_playing():
-        await player.queue(url, search=True)
-        song = await player.play()
-        ep=discord.Embed(title=f"Playing:",description=f"***{song.name}***",colour = discord.Colour.green())
-        ep.set_thumbnail(url="https://cdn.discordapp.com/emojis/892336795650490388.gif")
-        #ep.set_footer(text =f"Song requested by: {ctx.message.author}",icon_url=ctx.author.avatar_url)
-        
-        b=f'<a:eq:892336795650490388> Playing: `{song.name}`'
-        await msg.delete()
-        playing=await ctx.send(embed=ep,delete_after = 30)
-        await playing.add_reaction('<a:eq:892336795650490388>')
-        
-      else:
-        song = await player.queue(url, search=True)
-        await msg.delete()
-        eq=discord.Embed(title=f"In Queue:",description=f"***{song.name}***",colour = discord.Colour.dark_green())
-        eq.set_thumbnail(url="https://cdn.discordapp.com/emojis/892336795650490388.gif")
-        #eq.set_footer(text =f"Queued by: {ctx.message.author}",icon_url=ctx.author.avatar_url)
-        q=await ctx.send(embed=eq,delete_after = 30)
-        await q.add_reaction('<a:check_Ani:892443410898747392>') 
     
 
     #Queue
